@@ -6,10 +6,10 @@ The project came out of a practical, everyday need, since converting images to W
 
 What makes webpcvt worth using, beyond just being "another WebP converter," comes down to a few practical points:
 
-- **Simple** — no complicated flags to memorize, no configuration files, nothing to set up first. You point it at an image and it converts.
-- **Portable** — it ships as a single binary, so there's nothing else to install on the target machine. No runtime, no separate libraries to pull in first. Download it, drop it somewhere in your `PATH`, and it works.
-- **Fast** — being written in Go, it starts instantly and processes images without the overhead of a scripting runtime, which matters when it's called dozens or hundreds of times inside a batch job or a CI pipeline.
-- **Practical** — sensible defaults (a default quality of 80, automatic output naming) mean the common case, "just convert this file," takes a single short command, without having to think about it.
+- **Simple** - no complicated flags to memorize, no configuration files, nothing to set up first. You point it at an image and it converts.
+- **Portable** - it ships as a single binary, so there's nothing else to install on the target machine. No runtime, no separate libraries to pull in first. Download it, drop it somewhere in your `PATH`, and it works.
+- **Fast** - being written in Go, it starts instantly and processes images without the overhead of a scripting runtime, which matters when it's called dozens or hundreds of times inside a batch job or a CI pipeline.
+- **Practical** - sensible defaults (a default quality of 80, automatic output naming) mean the common case, "just convert this file," takes a single short command, without having to think about it.
 
 ## How it works
 
