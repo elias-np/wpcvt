@@ -47,7 +47,7 @@ The plan is to grow it step by step: single-file conversion first, then batch co
 
 ### Linux (64-bit)
 
-1. Download [webpcvt-linux-amd64.tar.gz].(https://github.com/elias-np/webpcvt/releases/download/v0.1.0/webpcvt-linux-amd64.tar.gz)
+1. Download [webpcvt-linux-amd64.tar.gz](https://github.com/elias-np/webpcvt/releases/download/v0.1.0/webpcvt-linux-amd64.tar.gz)
 2. Extract and install:
 
 ```bash
