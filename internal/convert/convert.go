@@ -2,6 +2,8 @@ package convert
 
 import (
 	"fmt"
+	"path/filepath"
+	"strings"
 
 	"webpcvt/internal/webp"
 )
@@ -20,4 +22,15 @@ func Run(options Options) error {
 	}
 
 	return nil
+}
+
+// DefaultOutput derives an output path from input by swapping its
+// extension for .webp, or appending .webp when input has no extension.
+func DefaultOutput(input string) string {
+	ext := filepath.Ext(input)
+	if ext == "" {
+		return input + ".webp"
+	}
+
+	return strings.TrimSuffix(input, ext) + ".webp"
 }

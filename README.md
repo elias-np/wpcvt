@@ -30,12 +30,13 @@ If you skip the output name, webpcvt reuses the input name and swaps the extensi
 
 ## Project status
 
-The plan is to grow it step by step: single-file conversion first, then batch conversion of whole directories, support for more input formats, and other flags that make sense day to day. 
+The plan is to grow it step by step: single-file conversion first, then batch conversion of whole directories, support for more input formats, and other flags that make sense day to day.
 
 ## What's included
 
 - Lossy conversion through libwebp, with adjustable quality (`-q`). Default is 80 when `-q` is omitted.
 - Automatic output naming (swaps the extension to `.webp` when no output name is given).
+- Batch conversion of a whole directory (`-r`/`--recursive` to include subdirectories), converting matching files concurrently.
 
 ## Installation
 
@@ -80,3 +81,20 @@ Converts with a custom quality (0 to 100). Can be combined with a custom output 
 ```bash
 webpcvt input.jpg output.webp -q 50
 ```
+
+```bash
+webpcvt ./photos
+```
+Converts every `.jpg`, `.jpeg` and `.png` file directly inside `./photos`, each saved next to its original as `.webp`. Subdirectories are left untouched.
+
+```bash
+webpcvt ./photos -r
+```
+Same as above, but recurses into every subdirectory of `./photos`, converting each image next to itself.
+
+```bash
+webpcvt ./photos ./photos-webp -r -q 90
+```
+Recursively converts `./photos` into `./photos-webp` instead of in place. If images live in more than one subdirectory, webpcvt asks once whether to mirror `./photos`'s folder structure inside `./photos-webp` or flatten everything into a single folder.
+
+If any target `.webp` file already exists, webpcvt asks once whether to skip those files or overwrite (reconvert) them, then converts the rest of the batch concurrently.

@@ -4,7 +4,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"webpcvt/internal/convert"
 	"webpcvt/internal/testutil"
 )
 
@@ -16,22 +15,22 @@ func TestParseWithExplicitOutput(t *testing.T) {
 		t.Fatalf("Parse returned error: %v", err)
 	}
 
-	assertOptions(t, options, convert.Options{
+	assertOptions(t, options, Options{
 		Input:   "image.jpg",
 		Output:  "out.webp",
 		Quality: 85,
 	})
 }
 
-func TestParseUsesDefaultOutput(t *testing.T) {
+func TestParseLeavesOutputEmptyWhenOmitted(t *testing.T) {
 	options, err := Parse([]string{"assets/image.png", "-q", "70"}, testVersion)
 	if err != nil {
 		t.Fatalf("Parse returned error: %v", err)
 	}
 
-	assertOptions(t, options, convert.Options{
+	assertOptions(t, options, Options{
 		Input:   "assets/image.png",
-		Output:  "assets/image.webp",
+		Output:  "",
 		Quality: 70,
 	})
 }
@@ -53,6 +52,28 @@ func TestParseVersionFlag(t *testing.T) {
 		if err != ErrVersion {
 			t.Fatalf("Parse(%q) error = %v, want ErrVersion", flag, err)
 		}
+	}
+}
+
+func TestParseRecursiveFlag(t *testing.T) {
+	for _, flag := range []string{"-r", "--recursive"} {
+		options, err := Parse([]string{"images", flag}, testVersion)
+		if err != nil {
+			t.Fatalf("Parse(%q) returned error: %v", flag, err)
+		}
+		if !options.Recursive {
+			t.Fatalf("Parse(%q).Recursive = false, want true", flag)
+		}
+	}
+}
+
+func TestParseDefaultsRecursiveToFalse(t *testing.T) {
+	options, err := Parse([]string{"image.jpg"}, testVersion)
+	if err != nil {
+		t.Fatalf("Parse returned error: %v", err)
+	}
+	if options.Recursive {
+		t.Fatal("Recursive = true, want false")
 	}
 }
 
@@ -90,7 +111,42 @@ func TestRunCallsConversionWorkflow(t *testing.T) {
 	testutil.AssertWebPFile(t, output)
 }
 
-func assertOptions(t *testing.T, got convert.Options, want convert.Options) {
+func TestRunUsesDefaultOutputForFile(t *testing.T) {
+	dir := t.TempDir()
+	input := filepath.Join(dir, "image.png")
+	testutil.WritePNG(t, input)
+
+	if err := Run([]string{input}, testVersion); err != nil {
+		t.Fatalf("Run returned error: %v", err)
+	}
+
+	testutil.AssertWebPFile(t, filepath.Join(dir, "image.webp"))
+}
+
+func TestRunRejectsRecursiveOnFileInput(t *testing.T) {
+	dir := t.TempDir()
+	input := filepath.Join(dir, "image.png")
+	testutil.WritePNG(t, input)
+
+	if err := Run([]string{input, "-r"}, testVersion); err == nil {
+		t.Fatal("Run returned nil error")
+	}
+}
+
+func TestRunConvertsDirectory(t *testing.T) {
+	dir := t.TempDir()
+	testutil.WritePNG(t, filepath.Join(dir, "a.png"))
+	testutil.WritePNG(t, filepath.Join(dir, "b.png"))
+
+	if err := Run([]string{dir}, testVersion); err != nil {
+		t.Fatalf("Run returned error: %v", err)
+	}
+
+	testutil.AssertWebPFile(t, filepath.Join(dir, "a.webp"))
+	testutil.AssertWebPFile(t, filepath.Join(dir, "b.webp"))
+}
+
+func assertOptions(t *testing.T, got Options, want Options) {
 	t.Helper()
 
 	if got != want {

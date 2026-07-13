@@ -3,10 +3,11 @@ package cli
 import (
 	"errors"
 	"fmt"
-	"path/filepath"
+	"os"
 	"strconv"
 	"strings"
 
+	"webpcvt/internal/batch"
 	"webpcvt/internal/convert"
 )
 
@@ -15,6 +16,15 @@ const defaultQuality = 80
 // ErrVersion is returned when the user requests the version information.
 var ErrVersion = errors.New("version requested")
 
+// Options holds the validated command-line arguments before they are
+// resolved into a single-file or a directory conversion job.
+type Options struct {
+	Input     string
+	Output    string
+	Quality   int
+	Recursive bool
+}
+
 // Run parses arguments and starts the conversion workflow.
 func Run(args []string, version string) error {
 	options, err := Parse(args, version)
@@ -22,24 +32,63 @@ func Run(args []string, version string) error {
 		return err
 	}
 
-	return convert.Run(options)
+	return dispatch(options)
 }
 
-// Parse validates command line arguments and returns conversion options.
-func Parse(args []string, version string) (convert.Options, error) {
+// dispatch decides, based on what Input actually is on disk, whether to
+// run a single-file conversion or a directory batch conversion.
+func dispatch(options Options) error {
+	info, err := os.Stat(options.Input)
+	if err != nil {
+		return fmt.Errorf("stat input: %w", err)
+	}
+
+	if info.IsDir() {
+		return batch.Run(batch.Options{
+			Root:      options.Input,
+			OutputDir: options.Output,
+			Quality:   options.Quality,
+			Recursive: options.Recursive,
+			Prompter:  batch.NewStdinPrompter(),
+		})
+	}
+
+	if options.Recursive {
+		return errors.New("flag -r/--recursive requires a directory input")
+	}
+
+	output := options.Output
+	if output == "" {
+		output = convert.DefaultOutput(options.Input)
+	}
+
+	return convert.Run(convert.Options{
+		Input:   options.Input,
+		Output:  output,
+		Quality: options.Quality,
+	})
+}
+
+// Parse validates command line arguments and returns the requested options.
+func Parse(args []string, version string) (Options, error) {
 	quality := defaultQuality
+	recursive := false
 	paths := make([]string, 0, 2)
 
 	for index := 0; index < len(args); index++ {
 		arg := args[index]
 		if arg == "-v" || arg == "--version" {
 			fmt.Println("webpcvt", version)
-			return convert.Options{}, ErrVersion
+			return Options{}, ErrVersion
+		}
+		if arg == "-r" || arg == "--recursive" {
+			recursive = true
+			continue
 		}
 		if arg == "-q" {
 			parsedQuality, nextIndex, err := parseQuality(args, index)
 			if err != nil {
-				return convert.Options{}, err
+				return Options{}, err
 			}
 			quality = parsedQuality
 			index = nextIndex
@@ -48,42 +97,40 @@ func Parse(args []string, version string) (convert.Options, error) {
 		if strings.HasPrefix(arg, "-q=") {
 			parsedQuality, err := parseQualityValue(strings.TrimPrefix(arg, "-q="))
 			if err != nil {
-				return convert.Options{}, err
+				return Options{}, err
 			}
 			quality = parsedQuality
 			continue
 		}
 		if strings.HasPrefix(arg, "-") {
-			return convert.Options{}, fmt.Errorf("unknown flag %q", arg)
+			return Options{}, fmt.Errorf("unknown flag %q", arg)
 		}
 
 		paths = append(paths, arg)
 	}
 
 	if len(paths) == 0 {
-		return convert.Options{}, errors.New("input file is required")
+		return Options{}, errors.New("input file or directory is required")
 	}
 	if len(paths) > 2 {
-		return convert.Options{}, errors.New("too many arguments")
+		return Options{}, errors.New("too many arguments")
 	}
 
 	input := paths[0]
 	if strings.TrimSpace(input) == "" {
-		return convert.Options{}, errors.New("input file is required")
+		return Options{}, errors.New("input file or directory is required")
 	}
 
 	output := ""
 	if len(paths) == 2 {
 		output = paths[1]
 	}
-	if strings.TrimSpace(output) == "" {
-		output = defaultOutput(input)
-	}
 
-	return convert.Options{
-		Input:   input,
-		Output:  output,
-		Quality: quality,
+	return Options{
+		Input:     input,
+		Output:    output,
+		Quality:   quality,
+		Recursive: recursive,
 	}, nil
 }
 
@@ -111,13 +158,4 @@ func parseQualityValue(value string) (int, error) {
 	}
 
 	return quality, nil
-}
-
-func defaultOutput(input string) string {
-	ext := filepath.Ext(input)
-	if ext == "" {
-		return input + ".webp"
-	}
-
-	return strings.TrimSuffix(input, ext) + ".webp"
 }
