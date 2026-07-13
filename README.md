@@ -48,7 +48,7 @@ The plan is to grow it step by step: single-file conversion first, then batch co
 
 ### Linux (64-bit)
 
-1. Download [webpcvt-linux-amd64.tar.gz].(https://github.com/elias-np/webpcvt/releases/download/v0.1.0/webpcvt-linux-amd64.tar.gz)
+1. Download [webpcvt-linux-amd64.tar.gz](https://github.com/elias-np/webpcvt/releases/download/v0.1.0/webpcvt-linux-amd64.tar.gz)
 2. Extract and install:
 
 ```bash
@@ -81,6 +81,7 @@ Converts with a custom quality (0 to 100). Can be combined with a custom output 
 ```bash
 webpcvt input.jpg output.webp -q 50
 ```
+<<<<<<< HEAD
 
 ```bash
 webpcvt ./photos
@@ -98,3 +99,5 @@ webpcvt ./photos ./photos-webp -r -q 90
 Recursively converts `./photos` into `./photos-webp` instead of in place. If images live in more than one subdirectory, webpcvt asks once whether to mirror `./photos`'s folder structure inside `./photos-webp` or flatten everything into a single folder.
 
 If any target `.webp` file already exists, webpcvt asks once whether to skip those files or overwrite (reconvert) them, then converts the rest of the batch concurrently.
+=======
+>>>>>>> 74a3b73d289412e4b091244b872f33bfbd6ebc61
